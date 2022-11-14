@@ -8,13 +8,14 @@
 import Foundation
 import UIKit
 
-struct WeatherResponse: Codable, Hashable {
+// Response
+struct WeatherResponse: Decodable, Hashable {
     let current: Current
     let forecast: Forecast
 }
 
 // Current
-struct Current: Codable, Hashable {
+struct Current: Decodable, Hashable {
     let temp: Double
     let isDay: Int
     let feelsLike: Double
@@ -27,19 +28,20 @@ struct Current: Codable, Hashable {
         case condition
     }
 }
+
 // Forecast
-struct Forecast: Codable, Hashable {
+struct Forecast: Decodable, Hashable {
     let forecastday: [DailyForecast]
 }
 
-struct DailyForecast: Codable, Hashable {
+struct DailyForecast: Decodable, Hashable {
     let date: String
     let day: Day
     let hour: [HourlyForecast]
     let astro: AstroForecast
 }
 
-struct Day: Codable, Hashable {
+struct Day: Decodable, Hashable {
     let minTemp: Double
     let maxTemp: Double
     let dailyChanceOfRain: Int
@@ -53,7 +55,7 @@ struct Day: Codable, Hashable {
     }
 }
 
-struct HourlyForecast: Codable, Hashable {
+struct HourlyForecast: Decodable, Hashable {
     
     let time: String
     let temp: Double
@@ -70,12 +72,12 @@ struct HourlyForecast: Codable, Hashable {
     }
 }
 
-struct AstroForecast: Codable, Hashable {
+struct AstroForecast: Decodable, Hashable {
     let sunrise: String
     let sunset: String
 }
 
-struct Condition: Codable, Hashable {
+struct Condition: Decodable, Hashable {
     let text: String
     let code: WeatherCode
 }

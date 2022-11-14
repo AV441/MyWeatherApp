@@ -7,10 +7,10 @@
 
 import Foundation
 
-class DateConverter {
+final class DateConverter {
     
-    // ForecastTimeConverter
-   static func convertForecastTimeWithDate(from date: String) -> Date? {
+    /// ForecastTimeConverter
+    static func convertForecastTimeWithDate(from date: String) -> Date? {
         let formater = DateFormatter()
         formater.dateFormat = "YYYY-MM-dd HH:mm"
         guard let dateFromString = formater.date(from: date) else { return nil }
@@ -32,7 +32,7 @@ class DateConverter {
         return time
     }
     
-    // CurrentTimeConverter
+    /// CurrentTimeConverter
     static func convertCurrentTime() -> Date? {
         let formater = DateFormatter()
         formater.dateFormat = "MM-dd HH:mm"
@@ -42,8 +42,8 @@ class DateConverter {
         return currentTime
     }
     
-    // AstroTimeConverter
-   static func convertAstroTime(from state: String) -> (Date, String)? {
+    /// AstroTimeConverter
+    static func convertAstroTime(from state: String) -> (Date, String)? {
         let formater = DateFormatter()
         formater.dateFormat = "hh:mm a"
         formater.locale = Locale(identifier: "en_US_POSIX")
@@ -55,8 +55,8 @@ class DateConverter {
         return (astroTimeDate, astroTimeString)
     }
     
-    // Convert "YYYY-MM-dd HH:mm" to "HH:mm". This func will only be used in Hourly Section configuration, thats why it could return "Сейчас".
-   static func getTimeFromDate(_ date: String) -> String {
+    /// Convert "YYYY-MM-dd HH:mm" to "HH:mm". This func will only be used in Hourly Section configuration, thats why it could return "Сейчас".
+    static func getTimeFromDate(_ date: String) -> String {
         
         let formater = DateFormatter()
         formater.dateFormat = "YYYY-MM-dd HH:mm"
