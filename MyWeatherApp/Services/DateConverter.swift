@@ -81,7 +81,7 @@ final class DateConverter {
     }
     
     /// 
-    static func getDayFromDate(_ date: String) -> String {
+    public static func getDayFromDate(_ date: String) -> String {
         formater.dateFormat = "YYYY-MM-dd"
         let dateFromString = formater.date(from: date)
         formater.dateFormat = "EEE, d MMM"

@@ -9,8 +9,8 @@ import UIKit
 
 final class HourlyCollectionViewCell: UICollectionViewCell {
 
-    static let nib = UINib(nibName: "HourlyCollectionViewCell", bundle: nil)
-    static let identifier = "HourlyCollectionViewCell"
+    public static let nib = UINib(nibName: "HourlyCollectionViewCell", bundle: nil)
+    public static let identifier = "HourlyCollectionViewCell"
     
     @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var chanceOfRainLabel: UILabel!

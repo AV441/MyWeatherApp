@@ -30,7 +30,7 @@ final class WeatherService {
         // create data task
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard error == nil, let data = data else {
-                completion(.failure(error!))
+                completion(.failure(WeatherServiceErrors.fetchWeatherError))
                 return
             }
             
@@ -39,7 +39,7 @@ final class WeatherService {
                 let weatherResponse = fetchedWeatherData
                     completion(.success(weatherResponse))
             } catch {
-                completion(.failure(error))
+                completion(.failure(WeatherServiceErrors.decodingError))
             }
         }.resume()
     }
@@ -56,7 +56,7 @@ final class WeatherService {
         // create data task
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard error == nil, let data = data else {
-                completion(.failure(error!))
+                completion(.failure(WeatherServiceErrors.fetchWeatherError))
                 return
             }
             
@@ -65,7 +65,7 @@ final class WeatherService {
                 let weatherResponse = fetchedWeatherData
                     completion(.success(weatherResponse))
             } catch {
-                completion(.failure(error))
+                completion(.failure(WeatherServiceErrors.decodingError))
             }
         }.resume()
     }
@@ -73,12 +73,15 @@ final class WeatherService {
     /// Requests locations for the given query string
     public func searchLocation(_ searchEntry: String, completion: @escaping (LocationsFetchResult) -> Void) {
         
-        let url = URL(string: "http://api.weatherapi.com/v1/search.json?key=\(key)&q=\(searchEntry)")!
+        guard let url = URL(string: "http://api.weatherapi.com/v1/search.json?key=\(key)&q=\(searchEntry)") else {
+            completion(.failure(WeatherServiceErrors.urlError))
+            return
+        }
 
         URLSession.shared.dataTask(with: url) { data, response, error  in
             
             guard error == nil, let data = data else {
-                completion(.failure(error!))
+                completion(.failure(WeatherServiceErrors.fetchLocationError))
                 return
             }
             
@@ -87,14 +90,32 @@ final class WeatherService {
                 let searchResults = searchResponse
                 completion(.success(searchResults))
             } catch {
-                completion(.failure(error))
+                completion(.failure(WeatherServiceErrors.decodingError))
             }
         }.resume()
     }
     
 }
 
-enum WeatherServiceErrors: LocalizedError {
+fileprivate enum WeatherServiceErrors: Error {
     case urlError
-    case fetchError
+    case fetchWeatherError
+    case fetchLocationError
+    case decodingError
+}
+
+extension WeatherServiceErrors: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .urlError:
+            return NSLocalizedString("Failed to create url", comment: "")
+        case .fetchWeatherError:
+            return NSLocalizedString("Failed to fetch weather Data. Check your internet connection", comment: "")
+        case .fetchLocationError:
+            return NSLocalizedString("Failed to fetch locations. Check your internet connection", comment: "")
+        case .decodingError:
+            return NSLocalizedString("Failed to decode recieved data", comment: "")
+        }
+    }
+   
 }

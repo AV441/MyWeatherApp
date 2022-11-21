@@ -9,8 +9,8 @@ import UIKit
 
 final class CollectionHeaderView: UICollectionReusableView {
 
-    static let identifier = "CollectionHeaderView"
-    static let nib = UINib(nibName: "CollectionHeaderView", bundle: nil)
+    public static let identifier = "CollectionHeaderView"
+    public static let nib = UINib(nibName: "CollectionHeaderView", bundle: nil)
     
     @IBOutlet weak var label: UILabel!
     @IBOutlet weak var imageView: UIImageView!
@@ -20,10 +20,7 @@ final class CollectionHeaderView: UICollectionReusableView {
     }
     
     public func setHeader(ofType header: SectionHeaderType) {
-        guard let image = header.image else {
-            return
-        }
         label.text = header.rawValue
-        imageView.image = image
+        imageView.image = header.image
     }
 }

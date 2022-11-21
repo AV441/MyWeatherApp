@@ -39,11 +39,11 @@ final class CollectionViewModel: NSObject {
                                 self?.updateCollectionView()
                             }
                     case .failure(let error):
-                        print("Failed to get weater data: \(error.localizedDescription)")
+                        print(error.localizedDescription)
                     }
                 }
             case .failure(let error):
-                print("Failed to get location: \(error.localizedDescription)")
+                print(error.localizedDescription)
             }
         }
     }
@@ -75,7 +75,7 @@ final class CollectionViewModel: NSObject {
                 }
                 
             case .failure(let error):
-                print("Failed to get weater data: \(error.localizedDescription)")
+                print(error.localizedDescription)
             }
         }
     }

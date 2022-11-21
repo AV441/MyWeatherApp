@@ -9,8 +9,8 @@ import UIKit
 
 final class CurrentCollectionViewCell: UICollectionViewCell {
     
-    static let nib = UINib(nibName: "CurrentCollectionViewCell", bundle: nil)
-    static let identifier = "CurrentCollectionViewCell"
+    public static let nib = UINib(nibName: "CurrentCollectionViewCell", bundle: nil)
+    public static let identifier = "CurrentCollectionViewCell"
     
     @IBOutlet weak var locationLabel: UILabel!
     @IBOutlet weak var tempLabel: UILabel!

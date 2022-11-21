@@ -12,14 +12,13 @@ typealias LocationUpdateResult = Result<Coordinates, Error>
 
 final class LocationService: NSObject {
     
-    private var completion: ((LocationUpdateResult)-> Void)?
+    private var completion: ((LocationUpdateResult) -> Void)?
     private let locationManager = CLLocationManager()
     
     override init() {
         super.init()
         if CLLocationManager.locationServicesEnabled() {
             locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyBest
             locationManager.requestWhenInUseAuthorization()
         }
     }
@@ -34,11 +33,12 @@ final class LocationService: NSObject {
 extension LocationService: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        locationManager.stopUpdatingLocation()
+        
         if let location = locations.last {
             let coordinates = Coordinates(of: location)
             completion?(.success(coordinates))
         }
-        locationManager.stopUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -48,10 +48,8 @@ extension LocationService: CLLocationManagerDelegate {
 }
 
 private extension Coordinates {
-    
     init(of location: CLLocation) {
         lat = location.coordinate.latitude
         lon = location.coordinate.longitude
     }
-    
 }
