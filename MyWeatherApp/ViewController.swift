@@ -7,128 +7,71 @@
 
 import UIKit
 
-typealias DataSource = UICollectionViewDiffableDataSource<Section, Item>
-typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Item>
-
 final class ViewController: UIViewController {
     
-    @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var noResultsLabel: UILabel!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var collectionView: UICollectionView!
     
-    private var dataSource: DataSource!
-    private var snapshot = Snapshot()
-    
+    private let searchBar = UISearchBar()
+    private let sections = Section.allCases
+    private var viewModel: CollectionViewModel!
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupSearchBar()
+        setupTableView()
         setupCollectionView()
-        createDataSource()
-        addObservers()
+        initViewModel()
     }
     
-    private func addObservers() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateCollectionView(notification:)),
-                                               name: NSNotification.Name(rawValue: "location"),
-                                               object: nil)
-    }
-    
-    private func setBackgroundImage(_ image: UIImage?) {
-        guard let image = image else { return }
-        imageView.image = image
-    }
-    
-    @objc private func updateCollectionView(notification: NSNotification) {
-        guard let object = notification.object as? (WeatherResponse, String) else {
-            return
-        }
+    private func initViewModel() {
+        viewModel = CollectionViewModel()
         
-        let results = object.0
-        let locationName = object.1
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let strongSelf = self else {
-                return
-            }
-            
-            // Change Background
-            if results.current.isDay == 1 {
-                let image = UIImage(named: "backgroundDay")
-                strongSelf.setBackgroundImage(image)
-            } else {
-                let image = UIImage(named: "backgroundNight")
-                strongSelf.setBackgroundImage(image)
-            }
-            
-            // Fill Current Items
-            var currentItems = [Item]()
-            
-            let currentWeather = CurrentWeather(locationName: locationName,
-                                                weather: results.current)
-            currentItems.append(Item.current(currentWeather))
-            
-            // Fill Hourly Items
-            var hourlyItems = [Item.hourly(HourlyWeather(weatherData: HourlyForecast(time: "Сейчас",
-                                                                                     temp: results.current.temp,
-                                                                                     isDay: results.current.isDay,
-                                                                                     chanceOfRain: 0,
-                                                                                     condition: results.current.condition),
-                                                         astroData: nil,
-                                                         astroKind: nil))]
-            
-            let sunriseTimeString = results.forecast.forecastday[0].astro.sunrise
-            let sunsetTimeString = results.forecast.forecastday[0].astro.sunset
-            
-            guard let sunriseTime = DateConverter.convertAstroTime(from: sunriseTimeString)?.0,
-                  let sunsetTime = DateConverter.convertAstroTime(from: sunsetTimeString)?.0,
-                  let currentTime = DateConverter.convertCurrentTime() else { return }
-            
-            let hourlyWeatherArray = results.forecast.forecastday[0].hour + results.forecast.forecastday[1].hour
-            
-            for i in 0...(hourlyWeatherArray.count - 2) {
-                guard let forecastTimeWithDate = DateConverter.convertForecastTimeWithDate(from: hourlyWeatherArray[i].time),
-                      let forecastTimeWithoutDate1 = DateConverter.convertForecastTimeWithoutDate(from: hourlyWeatherArray[i].time),
-                      let forecastTimeWithoutDate2 = DateConverter.convertForecastTimeWithoutDate(from: hourlyWeatherArray[i+1].time) else { return }
-                if hourlyItems.count != 27 {
-                    if forecastTimeWithDate >= currentTime {
-                        if sunriseTime >= forecastTimeWithoutDate1, sunriseTime <= forecastTimeWithoutDate2 {
-                            
-                            hourlyItems.append(Item.hourly(HourlyWeather(weatherData: hourlyWeatherArray[i], astroData: nil, astroKind: nil)))
-                            hourlyItems.append(Item.hourly(HourlyWeather(weatherData: hourlyWeatherArray[i], astroData: results.forecast.forecastday[0].astro, astroKind: HourlyWeather.AstroKind.isSunrise)))
-                            
-                        } else if sunsetTime >= forecastTimeWithoutDate1, sunsetTime <= forecastTimeWithoutDate2  {
-                            
-                            hourlyItems.append(Item.hourly(HourlyWeather(weatherData: hourlyWeatherArray[i], astroData: nil, astroKind: nil)))
-                            hourlyItems.append(Item.hourly(HourlyWeather(weatherData: hourlyWeatherArray[i], astroData: results.forecast.forecastday[0].astro, astroKind: HourlyWeather.AstroKind.isSunset)))
-                            
-                        } else {
-                            
-                            hourlyItems.append(Item.hourly(HourlyWeather(weatherData: hourlyWeatherArray[i], astroData: nil, astroKind: nil)))
-                        }
-                    }
+        viewModel.updateCollectionView = {
+            DispatchQueue.main.async { [weak self] in
+                self?.collectionView.reloadData()
+                self?.collectionView.performBatchUpdates(nil) { [weak self] _ in
+                    self?.noResultsLabel.isHidden = true
+                    self?.tableView.isHidden = true
+                    self?.collectionView.isHidden = false
+                    self?.activityIndicator.stopAnimating()
                 }
             }
-            
-            // Fill Daily Items
-            var dailyItems = [Item]()
-            results.forecast.forecastday.forEach { element in
-                dailyItems.append(Item.daily(element))
-            }
-            
-            // Fill Sections
-            let sections: [Section: [Item]] = [
-                Section.current: currentItems,
-                Section.hourly: hourlyItems,
-                Section.daily: dailyItems
-            ]
-            
-            // Apply Snapshot
-            strongSelf.applySnapshot(with: sections)
         }
+        
+        viewModel.updateTableView = {
+            DispatchQueue.main.async { [weak self] in
+                self?.tableView.reloadData()
+                self?.tableView.performBatchUpdates(nil) { [weak self] _ in
+                    self?.noResultsLabel.isHidden = true
+                    self?.tableView.isHidden = false
+                    self?.collectionView.isHidden = true
+                    self?.activityIndicator.stopAnimating()
+                }
+            }
+        }
+    }
+    
+    private func setupSearchBar() {
+        navigationController?.navigationBar.topItem?.titleView = searchBar
+        searchBar.delegate = self
+        searchBar.showsCancelButton = true
+        searchBar.keyboardType = .alphabet
+    }
+    
+    private func setupTableView() {
+        tableView.delegate = self
+        tableView.dataSource = self
     }
     
     // MARK: CollectionView Configuration
     private func setupCollectionView() {
+        collectionView.dataSource = self
         collectionView.collectionViewLayout = generateLayout()
+        
         collectionView.refreshControl = CollectionRefreshControl()
         
         collectionView.register(CurrentCollectionViewCell.nib,
@@ -150,7 +93,14 @@ final class ViewController: UIViewController {
     }
     
     @objc private func handleRefreshControl() {
-        LocationManager.shared.getLocation()
+        if viewModel.locations.isEmpty {
+            viewModel.getWeatherDataForCurrentLocation()
+        } else {
+            guard let location = viewModel.locations.last else {
+                return
+            }
+            viewModel.getWeatherData(for: location.name)
+        }
         
         DispatchQueue.main.async { [weak self] in
             self?.collectionView.refreshControl?.endRefreshing()
@@ -245,70 +195,143 @@ final class ViewController: UIViewController {
         
         return layout
     }
-    
-    // MARK: DataSource
-    private func createDataSource() {
-        // Cells DataSource
-        dataSource = DataSource(collectionView: collectionView, cellProvider: { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            switch item {
-                
-                // Current section
-            case let .current(currentWeather):
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CurrentCollectionViewCell.identifier, for: indexPath) as! CurrentCollectionViewCell
-                cell.configure(with: currentWeather)
-                return cell
-                
-                // Hourly section
-            case let .hourly(hourlyWeather):
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: HourlyCollectionViewCell.identifier, for: indexPath) as! HourlyCollectionViewCell
-                cell.configure(with: hourlyWeather)
-                return cell
-                
-                //Daily section
-            case let .daily(dailyWeather):
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DailyCollectionViewCell.identifier, for: indexPath) as! DailyCollectionViewCell
-                let isFirstItem: Bool = indexPath.item == 0
-                let isLastItem: Bool = collectionView.numberOfItems(inSection: indexPath.section) == indexPath.item + 1
-                cell.configure(with: dailyWeather, hideLineView: isLastItem, setupFirstItem: isFirstItem)
-                return cell
-            }
-        })
-        
-        // Headers DataSource
-        dataSource.supplementaryViewProvider = { (collectionView, kind, indexPath) -> UICollectionReusableView? in
-            let section = Section.allCases[indexPath.section]
-            switch section {
-                
-                // Current section
-            case .current:
-                return nil
-                
-                // Hourly section
-            case .hourly:
-                let sectionHeader = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: CollectionHeaderView.identifier, for: indexPath) as! CollectionHeaderView
-                sectionHeader.setTitle("ПРОГНОЗ НА 24 ЧАСА", with: UIImage(systemName: "clock"))
-                return sectionHeader
-                
-                //Daily section
-            case .daily:
-                let sectionHeader = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: CollectionHeaderView.identifier, for: indexPath) as! CollectionHeaderView
-                sectionHeader.setTitle("ПРОГНОЗ НА 3 ДНЯ", with: UIImage(systemName: "calendar"))
-                return sectionHeader
-            }
-        }
-    }
-    
-    // MARK: Snapshot
-    private func applySnapshot(with sections: [Section: [Item]]) {
-        snapshot = Snapshot()
-        snapshot.appendSections(Section.allCases)
-        
-        for section in sections {
-            snapshot.appendItems(section.value, toSection: section.key)
-        }
-        
-        guard let dataSource = dataSource else { return }
-        dataSource.apply(snapshot, animatingDifferences: false)
-    }
+
 }
+
+// MARK: SearchBarDelegate
+extension ViewController: UISearchBarDelegate {
     
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        let query = createSafeQueryString(from: searchText)
+        viewModel.searchLocation(query: query)
+        DispatchQueue.main.async { [weak self] in
+            self?.activityIndicator.startAnimating()
+        }
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        searchBar.text = nil
+        
+        tableView.isHidden = true
+        
+        if viewModel.currentCellViewModels.isEmpty {
+            collectionView.isHidden = true
+            noResultsLabel.isHidden = false
+        } else {
+            collectionView.isHidden = false
+            noResultsLabel.isHidden = true
+        }
+    }
+    
+    private func createSafeQueryString(from string: String) -> String {
+        let filteredString = string.filter { $0.isLetter || $0.isWhitespace }
+        let safeString = filteredString.replacingOccurrences(of: " ", with: "_")
+        return safeString
+    }
+    
+}
+
+// MARK: UITableViewDataSource
+extension ViewController: UITableViewDataSource, UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        let results = viewModel.locations
+        return results.isEmpty ? 1 : results.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        
+        var content = cell.defaultContentConfiguration()
+        let results = viewModel.locations
+        
+        if results.isEmpty {
+            content.text = "No Results"
+            content.textProperties.alignment = .center
+        } else {
+            let location = results[indexPath.row]
+            content.text = "\(location.name), \(location.country)"
+        }
+        
+        cell.contentConfiguration = content
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: false)
+        let location = viewModel.locations[indexPath.row]
+        
+        searchBar.text = nil
+        searchBar.resignFirstResponder()
+        activityIndicator.startAnimating()
+        
+        viewModel.getWeatherData(for: location.name)
+    }
+    
+}
+
+// MARK: UICollectionViewDataSource
+extension ViewController: UICollectionViewDataSource {
+
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return sections.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+
+        switch sections[section] {
+
+        case .current:
+            return viewModel.currentCellViewModels.count
+        case .hourly:
+            return viewModel.hourlyCellViewModels.count
+        case .daily:
+            return viewModel.dailyCellViewModels.count
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+
+        switch sections[indexPath.section] {
+            
+        case .current:
+            return UICollectionReusableView()
+            
+        case .hourly:
+            let sectionHeader = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: CollectionHeaderView.identifier, for: indexPath) as! CollectionHeaderView
+            sectionHeader.setHeader(ofType: .hourly)
+            return sectionHeader
+            
+        case .daily:
+            let sectionHeader = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: CollectionHeaderView.identifier, for: indexPath) as! CollectionHeaderView
+            sectionHeader.setHeader(ofType: .daily)
+            return sectionHeader
+        }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+
+        switch sections[indexPath.section] {
+
+        case .current:
+            let cellViewModel = viewModel.currentCellViewModels[indexPath.row]
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CurrentCollectionViewCell.identifier, for: indexPath) as! CurrentCollectionViewCell
+            cell.configure(with: cellViewModel)
+            return cell
+
+        case .hourly:
+            let cellViewModel = viewModel.hourlyCellViewModels[indexPath.row]
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: HourlyCollectionViewCell.identifier, for: indexPath) as! HourlyCollectionViewCell
+            cell.configure(with: cellViewModel)
+            return cell
+
+        case .daily:
+            let cellViewModel = viewModel.dailyCellViewModels[indexPath.row]
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DailyCollectionViewCell.identifier, for: indexPath) as! DailyCollectionViewCell
+            cell.configure(with: cellViewModel)
+            return cell
+        }
+    }
+    
+}

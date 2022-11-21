@@ -12,7 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        // Time to show Launch Screen
+        // Stop Thread to show Launch Screen
         Thread.sleep(forTimeInterval: 1.5)
         
         return true

@@ -22,17 +22,11 @@ final class CurrentCollectionViewCell: UICollectionViewCell {
         super.awakeFromNib()
     }
     
-    public func configure(with model: CurrentWeather) {
-        
-        locationLabel.text = model.locationName
-        tempLabel.text = "\(Int(model.weather.temp))°"
-        feelsLikeLabel.text = "Ощущается как \(Int(model.weather.feelsLike))°"
-        conditionLabel.text = model.weather.condition.text
-        
-        if model.weather.isDay == 1 {
-            imageView.image = model.weather.condition.code.imageDay
-        } else {
-            imageView.image = model.weather.condition.code.imageNight
-        }
+    public func configure(with viewModel: CurrentCellViewModel) {
+        locationLabel.text = viewModel.locationName
+        tempLabel.text = viewModel.temp
+        feelsLikeLabel.text = viewModel.feelsLikeTemp
+        conditionLabel.text = viewModel.condition
+        imageView.image = viewModel.image
     }
 }

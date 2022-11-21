@@ -15,7 +15,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let _ = (scene as? UIWindowScene) else { return }
     }
     
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        LocationManager.shared.getLocation()
-    }
 }

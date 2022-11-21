@@ -10,8 +10,13 @@ import UIKit
 
 // Response
 struct WeatherResponse: Decodable, Hashable {
+    let location: Location
     let current: Current
     let forecast: Forecast
+}
+
+struct Location: Decodable, Hashable {
+    let name: String
 }
 
 // Current

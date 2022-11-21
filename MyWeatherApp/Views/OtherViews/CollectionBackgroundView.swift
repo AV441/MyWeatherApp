@@ -19,7 +19,10 @@ final class CollectionBackgroundView: UICollectionReusableView {
     }
     
     private func setupView() {
-        backgroundView.backgroundColor = UIColor(red: 0/255, green: 100/255, blue: 140/255, alpha: 0.7)
+        backgroundView.backgroundColor = UIColor(red: 0/255,
+                                                 green: 100/255,
+                                                 blue: 140/255,
+                                                 alpha: 0.7)
         backgroundView.layer.borderWidth = 0.2
         backgroundView.layer.cornerRadius = 15
     }

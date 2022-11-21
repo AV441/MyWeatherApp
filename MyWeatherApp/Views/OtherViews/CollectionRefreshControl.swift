@@ -14,6 +14,6 @@ final class CollectionRefreshControl: UIRefreshControl {
                             green: 100/255,
                             blue: 140/255,
                             alpha: 0.7)
-        attributedTitle = NSAttributedString(string: "Потяните чтобы обновить")
+        attributedTitle = NSAttributedString(string: "Pull to refresh")
     }
 }

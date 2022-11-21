@@ -17,44 +17,23 @@ final class HourlyCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var tempLabel: UILabel!
     @IBOutlet weak var imageView: UIImageView!
     
+    private var isChanceOfRainLabelHidden: ((Bool) -> Void)?
+    
     override func awakeFromNib() {
         super.awakeFromNib()
-    }
-    
-    public func configure(with model: HourlyWeather) {
-        if model.astroKind != nil {
-            switch model.astroKind! {
-            case .isSunrise:
-                guard let sunriseTime = model.astroData?.sunrise else { return }
-                timeLabel.text = DateConverter.convertAstroTime(from: sunriseTime)?.1
-                imageView.image = UIImage(systemName: "sunrise.fill")?.withRenderingMode(.alwaysOriginal)
-                tempLabel.text = "Восход солнца"
-                chanceOfRainLabel.isHidden = true
-            case .isSunset:
-                guard let sunsetTime = model.astroData?.sunset else { return }
-                timeLabel.text = DateConverter.convertAstroTime(from: sunsetTime)?.1
-                imageView.image = UIImage(systemName: "sunset.fill")?.withRenderingMode(.alwaysOriginal)
-                tempLabel.text = "Заход солнца"
-                chanceOfRainLabel.isHidden = true
-            }
-        } else {
-            let forecastTime = model.weatherData.time
-            timeLabel.text = DateConverter.getTimeFromDate(forecastTime)
-            tempLabel.text = "\(Int(model.weatherData.temp))°"
-            
-            if model.weatherData.isDay == 1 {
-                imageView.image = model.weatherData.condition.code.imageDay }
-            else {
-                imageView.image = model.weatherData.condition.code.imageNight
-            }
-            
-            if model.weatherData.chanceOfRain != 0 {
-                chanceOfRainLabel.isHidden = false
-                chanceOfRainLabel.text = "\(model.weatherData.chanceOfRain)%"
-            }  else {
-                chanceOfRainLabel.isHidden = true
-            }
+        isChanceOfRainLabelHidden = { [weak self] result in
+            self?.chanceOfRainLabel.isHidden = result
         }
     }
-
+    
+    public func configure(with viewModel: HourlyCellViewModel?) {
+        if let viewModel = viewModel {
+            timeLabel.text = viewModel.time
+            chanceOfRainLabel.text = viewModel.chanceOfRain
+            tempLabel.text = viewModel.temp
+            imageView.image = viewModel.image
+            
+            viewModel.chanceOfRain == "0 %" ? isChanceOfRainLabelHidden?(true) : isChanceOfRainLabelHidden?(false)
+        }
+    }
 }

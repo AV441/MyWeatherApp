@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-enum WeatherCode: Int, Codable {
+enum WeatherCode: Int, Decodable {
     
     case clear = 1000
     case partlyCloudy = 1003

@@ -19,9 +19,11 @@ final class CollectionHeaderView: UICollectionReusableView {
         super.awakeFromNib()
     }
     
-    public func setTitle(_ title: String, with image: UIImage?) {
-        label.text = title
-        guard let image = image else { return }
+    public func setHeader(ofType header: SectionHeaderType) {
+        guard let image = header.image else {
+            return
+        }
+        label.text = header.rawValue
         imageView.image = image
     }
 }
