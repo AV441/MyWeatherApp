@@ -46,14 +46,12 @@ final class WeatherService {
     
     /// Requests weather data for the given location name
     public func requestWeatherData(for location: String, completion: @escaping (WeatherDataFetchResult) -> Void) {
-        
-        // Create url
+
         guard let url = URL(string: "http://api.weatherapi.com/v1/forecast.json?key=\(key)&q=\(location)&days=3&lang=en") else {
             completion(.failure(WeatherServiceErrors.urlError))
             return
         }
         
-        // create data task
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard error == nil, let data = data else {
                 completion(.failure(WeatherServiceErrors.fetchWeatherError))

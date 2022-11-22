@@ -11,8 +11,9 @@ final class CollectionViewModel: NSObject {
     private var locationService = LocationService()
     private var weatherService = WeatherService()
     
-    public var updateCollectionView: (() -> Void) = {}
-    public var updateTableView: (() -> Void) = {}
+    public var updateCollectionView: () -> Void = {}
+    public var updateTableView: () -> Void = {}
+    public var updateBackground: ((Int) -> Void)?
         
     public var locations = [SearchResponse]()
     
@@ -70,7 +71,11 @@ final class CollectionViewModel: NSObject {
             switch result {
                 
             case .success(let weatherData):
+                UserDefaults.standard.set(locationName, forKey: "lastLocation")
+                
                 self?.createCellViewModels(from: weatherData) { [weak self] _ in
+                    let isDay = weatherData.current.isDay
+                    self?.updateBackground?(isDay)
                     self?.updateCollectionView()
                 }
                 

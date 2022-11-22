@@ -154,11 +154,11 @@
 		75953FCC2848C8620027D90D /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				756360A8284A0A20004B4532 /* Section.swift */,
-				752BBAD429260684008C6BA1 /* Coordinates.swift */,
 				75D435D0283CFC8300E169D2 /* WeatherResponse.swift */,
 				755ADB68292272890000B73C /* SearchResponse.swift */,
 				75953FCD2848C8700027D90D /* WeatherCode.swift */,
+				756360A8284A0A20004B4532 /* Section.swift */,
+				752BBAD429260684008C6BA1 /* Coordinates.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";

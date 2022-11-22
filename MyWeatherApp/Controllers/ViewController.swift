@@ -30,6 +30,18 @@ final class ViewController: UIViewController {
     private func initViewModel() {
         viewModel = CollectionViewModel()
         
+        viewModel.updateBackground = { [weak self] result in
+            if result == 1 {
+                DispatchQueue.main.async { [weak self] in
+                    self?.imageView.image = UIImage(named: "backgroundDay")
+                }
+            } else {
+                DispatchQueue.main.async { [weak self] in
+                    self?.imageView.image = UIImage(named: "backgroundNight")
+                }
+            }
+        }
+        
         viewModel.updateCollectionView = {
             DispatchQueue.main.async { [weak self] in
                 self?.collectionView.reloadData()
@@ -67,7 +79,6 @@ final class ViewController: UIViewController {
         tableView.dataSource = self
     }
     
-    // MARK: CollectionView Configuration
     private func setupCollectionView() {
         collectionView.dataSource = self
         collectionView.collectionViewLayout = LayoutGenerator.generateLayout()
@@ -93,13 +104,11 @@ final class ViewController: UIViewController {
     }
     
     @objc private func handleRefreshControl() {
-        if viewModel.locations.isEmpty {
-            viewModel.getWeatherDataForCurrentLocation()
+        
+        if let locationName = UserDefaults.standard.value(forKey: "lastLocation") as? String {
+            viewModel.getWeatherData(for: locationName)
         } else {
-            guard let location = viewModel.locations.last else {
-                return
-            }
-            viewModel.getWeatherData(for: location.name)
+            print("Failed to refresh weather data")
         }
         
         DispatchQueue.main.async { [weak self] in
@@ -109,16 +118,19 @@ final class ViewController: UIViewController {
     
 }
 
-// MARK: SearchBarDelegate
+// MARK: UISearchBarDelegate
 extension ViewController: UISearchBarDelegate {
+    
+    
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         let query = createSafeQueryString(from: searchText)
-        viewModel.searchLocation(query: query)
-        DispatchQueue.main.async { [weak self] in
-            self?.activityIndicator.startAnimating()
+        if !query.isEmpty {
+            viewModel.searchLocation(query: query)
+            activityIndicator.startAnimating()
         }
     }
+    
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
@@ -171,13 +183,18 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: false)
-        let location = viewModel.locations[indexPath.row]
+        let locations = viewModel.locations
         
-        searchBar.text = nil
-        searchBar.resignFirstResponder()
-        activityIndicator.startAnimating()
-        
-        viewModel.getWeatherData(for: location.name)
+        if !locations.isEmpty {
+            let location = locations[indexPath.row]
+            let locationName = createSafeQueryString(from: location.name)
+            
+            searchBar.text = nil
+            searchBar.resignFirstResponder()
+            activityIndicator.startAnimating()
+            
+            viewModel.getWeatherData(for: locationName)
+        }
     }
     
 }
