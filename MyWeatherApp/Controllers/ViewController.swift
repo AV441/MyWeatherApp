@@ -121,8 +121,6 @@ final class ViewController: UIViewController {
 // MARK: UISearchBarDelegate
 extension ViewController: UISearchBarDelegate {
     
-    
-    
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         let query = createSafeQueryString(from: searchText)
         if !query.isEmpty {
@@ -130,7 +128,6 @@ extension ViewController: UISearchBarDelegate {
             activityIndicator.startAnimating()
         }
     }
-    
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
