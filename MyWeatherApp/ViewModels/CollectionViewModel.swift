@@ -5,11 +5,11 @@
 //  Created by Андрей on 15.11.2022.
 //
 
-import UIKit
+import Foundation
 
 final class CollectionViewModel: NSObject {
-    private var locationService = LocationService()
-    private var weatherService = WeatherService()
+    private let locationService = LocationService()
+    private let weatherService = WeatherService()
     
     public var updateCollectionView: () -> Void = {}
     public var updateTableView: () -> Void = {}
@@ -37,8 +37,8 @@ final class CollectionViewModel: NSObject {
                         
                     case .success(let weatherData):
                         self?.createCellViewModels(from: weatherData) { [weak self] _ in
-                                self?.updateCollectionView()
-                            }
+                            self?.updateCollectionView()
+                        }
                     case .failure(let error):
                         print(error.localizedDescription)
                     }
@@ -115,17 +115,14 @@ final class CollectionViewModel: NSObject {
         let condition = weatherResponse.current.condition.text
         let feelsLikeTemp = "Feels like \(Int(weatherResponse.current.feelsLike)) °"
         
-        var image: UIImage?
-        
-        if weatherResponse.current.isDay == 1 {
-            image = weatherResponse.current.condition.code.imageDay
-        } else {
-            image = weatherResponse.current.condition.code.imageNight
-        }
+        let isDay = weatherResponse.current.isDay
+        let code = weatherResponse.current.condition.code
+        let imageDay = ImageGenerator.dayImage(for: code)
+        let imageNight = ImageGenerator.nightImage(for: code)
         
         let currentCellViewModel = CurrentCellViewModel(locationName: locationName,
                                                         temp: temp,
-                                                        image: image,
+                                                        image: isDay == 1 ? imageDay : imageNight,
                                                         condition: condition,
                                                         feelsLikeTemp: feelsLikeTemp)
         currentCellViewModels.append(currentCellViewModel)
@@ -200,14 +197,14 @@ final class CollectionViewModel: NSObject {
                 case .isSunrise:
                     hourlyViewModels.append(
                         HourlyCellViewModel(time: DateConverter.createTimeString(from: item.time),
-                                            image: UIImage(systemName: "sunrise.fill")?.withRenderingMode(.alwaysOriginal),
+                                            image: ImageGenerator.sunriseImage,
                                             chanceOfRain: "0 %",
                                             temp: "Sunrise")
                     )
                 case .isSunset:
                     hourlyViewModels.append(
                         HourlyCellViewModel(time: DateConverter.createTimeString(from: item.time),
-                                            image: UIImage(systemName: "sunset.fill")?.withRenderingMode(.alwaysOriginal),
+                                            image: ImageGenerator.sunsetImage,
                                             chanceOfRain: "0 %",
                                             temp: "Sunset")
                     )
@@ -215,11 +212,13 @@ final class CollectionViewModel: NSObject {
             }
             
             if let weatherData = item.weatherData {
-                hourlyViewModels.append(
-                    HourlyCellViewModel(time: weatherData.time == "Now" ? "Now" : DateConverter.createTimeString(from: item.time),
-                                        image: item.weatherData?.condition.code.imageDay,
-                                        chanceOfRain: "\(weatherData.chanceOfRain) %",
-                                        temp: "\(Int(weatherData.temp))°")
+                let time = DateConverter.createTimeString(from: item.time)
+                let code = weatherData.condition.code
+                let image = ImageGenerator.dayImage(for: code)
+                hourlyViewModels.append(HourlyCellViewModel(time: weatherData.time == "Now" ? "Now" : time,
+                                                            image: image,
+                                                            chanceOfRain: "\(weatherData.chanceOfRain) %",
+                                                            temp: "\(Int(weatherData.temp))°")
                 )
             }
         }
@@ -233,8 +232,10 @@ final class CollectionViewModel: NSObject {
         let forecast = weatherData.forecast.forecastday
         
         for day in forecast {
+            let code = day.day.condition.code
+            let image = ImageGenerator.dayImage(for: code)
             let cellViewModel = DailyCellViewModel(day: DateConverter.getDayFromDate(day.date),
-                                                   image: day.day.condition.code.imageDay,
+                                                   image: image,
                                                    chanceOfRain: "\(day.day.dailyChanceOfRain) %",
                                                    minTemp: "\(Int(day.day.minTemp))°",
                                                    maxTemp: "\(Int(day.day.maxTemp))°")

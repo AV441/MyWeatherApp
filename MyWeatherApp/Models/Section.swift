@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import UIKit
 
 enum Section: Hashable, CaseIterable {
     case current 
@@ -17,13 +16,4 @@ enum Section: Hashable, CaseIterable {
 enum SectionHeaderType: String {
     case hourly = "24 HOURS FORECAST"
     case daily = "3 DAY FORECAST"
-    
-    var image: UIImage? {
-        switch self {
-        case .hourly:
-            return UIImage(systemName: "clock")
-        case .daily:
-            return UIImage(systemName: "calendar")
-        }
-    }
 }

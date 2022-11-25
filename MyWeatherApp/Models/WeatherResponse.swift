@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import UIKit
 
 // Response
 struct WeatherResponse: Decodable, Hashable {

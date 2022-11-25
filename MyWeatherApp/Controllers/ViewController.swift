@@ -15,28 +15,27 @@ final class ViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    private let refreshControl = CollectionRefreshControl()
     private let searchBar = UISearchBar()
+    private let viewModel = CollectionViewModel()
     private let sections = Section.allCases
-    private var viewModel: CollectionViewModel!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupSearchBar()
+        setupRefreshControl()
         setupTableView()
         setupCollectionView()
-        initViewModel()
+        bindViewModel()
     }
     
-    private func initViewModel() {
-        viewModel = CollectionViewModel()
+    private func bindViewModel() {
         
-        viewModel.updateBackground = { [weak self] result in
-            if result == 1 {
-                DispatchQueue.main.async { [weak self] in
+        viewModel.updateBackground = { result in
+            DispatchQueue.main.async { [weak self] in
+                if result == 1 {
                     self?.imageView.image = UIImage(named: "backgroundDay")
-                }
-            } else {
-                DispatchQueue.main.async { [weak self] in
+                } else {
                     self?.imageView.image = UIImage(named: "backgroundNight")
                 }
             }
@@ -46,10 +45,7 @@ final class ViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 self?.collectionView.reloadData()
                 self?.collectionView.performBatchUpdates(nil) { [weak self] _ in
-                    self?.noResultsLabel.isHidden = true
-                    self?.tableView.isHidden = true
-                    self?.collectionView.isHidden = false
-                    self?.activityIndicator.stopAnimating()
+                    self?.updateUI(state: .showCollectionView)
                 }
             }
         }
@@ -58,10 +54,7 @@ final class ViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 self?.tableView.reloadData()
                 self?.tableView.performBatchUpdates(nil) { [weak self] _ in
-                    self?.noResultsLabel.isHidden = true
-                    self?.tableView.isHidden = false
-                    self?.collectionView.isHidden = true
-                    self?.activityIndicator.stopAnimating()
+                    self?.updateUI(state: .showTableView)
                 }
             }
         }
@@ -79,11 +72,16 @@ final class ViewController: UIViewController {
         tableView.dataSource = self
     }
     
+    private func setupRefreshControl() {
+        refreshControl.addTarget(self,
+                                 action: #selector(refreshData),
+                                 for: .valueChanged)
+    }
+    
     private func setupCollectionView() {
-        collectionView.dataSource = self
         collectionView.collectionViewLayout = LayoutGenerator.generateLayout()
-        
-        collectionView.refreshControl = CollectionRefreshControl()
+        collectionView.refreshControl = refreshControl
+        collectionView.dataSource = self
         
         collectionView.register(CurrentCollectionViewCell.nib,
                                 forCellWithReuseIdentifier: CurrentCollectionViewCell.identifier)
@@ -97,22 +95,35 @@ final class ViewController: UIViewController {
         collectionView.register(CollectionHeaderView.nib,
                                 forSupplementaryViewOfKind: "sectionHeader",
                                 withReuseIdentifier: CollectionHeaderView.identifier)
-        
-        collectionView.refreshControl?.addTarget(self,
-                                                 action: #selector(handleRefreshControl),
-                                                 for: .valueChanged)
     }
     
-    @objc private func handleRefreshControl() {
-        
+    @objc private func refreshData() {
         if let locationName = UserDefaults.standard.value(forKey: "lastLocation") as? String {
             viewModel.getWeatherData(for: locationName)
         } else {
             print("Failed to refresh weather data")
         }
+    }
+    
+    private func updateUI(state: UIState) {
+        activityIndicator.stopAnimating()
+        refreshControl.endRefreshing()
         
-        DispatchQueue.main.async { [weak self] in
-            self?.collectionView.refreshControl?.endRefreshing()
+        switch state {
+        case .showCollectionView:
+            collectionView.isHidden = false
+            tableView.isHidden = true
+            noResultsLabel.isHidden = true
+            
+        case .showTableView:
+            collectionView.isHidden = true
+            tableView.isHidden = false
+            noResultsLabel.isHidden = true
+            
+        case .showNoResultsLabel:
+            collectionView.isHidden = true
+            tableView.isHidden = true
+            noResultsLabel.isHidden = false
         }
     }
     
@@ -123,24 +134,19 @@ extension ViewController: UISearchBarDelegate {
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         let query = createSafeQueryString(from: searchText)
-        if !query.isEmpty {
+        if !query.isEmpty && query.count >= 3 {
             viewModel.searchLocation(query: query)
             activityIndicator.startAnimating()
         }
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
-        searchBar.text = nil
-        
-        tableView.isHidden = true
+        searchBar.hide()
         
         if viewModel.currentCellViewModels.isEmpty {
-            collectionView.isHidden = true
-            noResultsLabel.isHidden = false
+            updateUI(state: .showNoResultsLabel)
         } else {
-            collectionView.isHidden = false
-            noResultsLabel.isHidden = true
+            updateUI(state: .showCollectionView)
         }
     }
     
@@ -186,8 +192,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             let location = locations[indexPath.row]
             let locationName = createSafeQueryString(from: location.name)
             
-            searchBar.text = nil
-            searchBar.resignFirstResponder()
+            searchBar.hide()
             activityIndicator.startAnimating()
             
             viewModel.getWeatherData(for: locationName)

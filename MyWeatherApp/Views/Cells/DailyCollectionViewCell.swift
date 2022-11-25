@@ -9,8 +9,8 @@ import UIKit
 
 final class DailyCollectionViewCell: UICollectionViewCell {
     
-    public static let nib = UINib(nibName: "DailyCollectionViewCell", bundle: nil)
-    public static let identifier = "DailyCollectionViewCell"
+    static let nib = UINib(nibName: "DailyCollectionViewCell", bundle: nil)
+    static let identifier = "DailyCollectionViewCell"
 
     @IBOutlet weak var dayLabel: UILabel!
     @IBOutlet weak var chanceOfRainLabel: UILabel!

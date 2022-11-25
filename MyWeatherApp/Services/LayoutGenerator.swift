@@ -9,7 +9,7 @@ import UIKit
 
 final class LayoutGenerator {
 
-    public static func generateLayout() -> UICollectionViewLayout {
+    static func generateLayout() -> UICollectionViewLayout {
         let layout = UICollectionViewCompositionalLayout { sectionIndex, layoutEnvironment in
             
             let sectionHeaderSize = NSCollectionLayoutSize(

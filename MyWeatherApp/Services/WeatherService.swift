@@ -5,7 +5,7 @@
 //  Created by Андрей on 15.11.2022.
 //
 
-import UIKit
+import Foundation
 
 typealias WeatherDataFetchResult = Result<WeatherResponse, Error>
 typealias LocationsFetchResult = Result<[SearchResponse], Error>

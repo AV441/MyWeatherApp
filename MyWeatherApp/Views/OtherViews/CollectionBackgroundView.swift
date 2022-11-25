@@ -9,7 +9,7 @@ import UIKit
 
 final class CollectionBackgroundView: UICollectionReusableView {
 
-    public static let nib = UINib(nibName: "CollectionBackgroundView", bundle: nil)
+    static let nib = UINib(nibName: "CollectionBackgroundView", bundle: nil)
     
     @IBOutlet weak var backgroundView: UIView!
     

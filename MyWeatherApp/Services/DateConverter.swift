@@ -12,13 +12,13 @@ final class DateConverter {
     private static let formater = DateFormatter()
     
     /// Creates "HH:mm" string from the given date
-    public static func createTimeString(from date: Date) -> String {
+    static func createTimeString(from date: Date) -> String {
         formater.dateFormat = "HH:mm"
         return formater.string(from: date)
     }
     
     /// ForecastTimeConverter
-    public static func convertForecastTimeWithDate(from date: String) -> Date {
+    static func convertForecastTimeWithDate(from date: String) -> Date {
         formater.dateFormat = "YYYY-MM-dd HH:mm"
         let dateFromString = formater.date(from: date) ?? .now
         formater.dateFormat = "MM-dd HH:mm"
@@ -28,7 +28,7 @@ final class DateConverter {
         return time
     }
     
-    public static func convertForecastTimeWithoutDate(from date: String) -> Date {
+    static func convertForecastTimeWithoutDate(from date: String) -> Date {
         formater.dateFormat = "YYYY-MM-dd HH:mm"
         let dateFromString = formater.date(from: date) ?? .now
         formater.dateFormat = "HH:mm"
@@ -38,7 +38,7 @@ final class DateConverter {
         return time
     }
     
-    public static func convertForecastTimeWithoutDate(from date: Date) -> Date {
+    static func convertForecastTimeWithoutDate(from date: Date) -> Date {
         formater.dateFormat = "HH:mm"
         let stringFromDate = formater.string(from: date)
         
@@ -47,7 +47,7 @@ final class DateConverter {
         return time
     }
     
-    public static func convertCurrentTime() -> Date {
+    static func convertCurrentTime() -> Date {
         let formater = DateFormatter()
         formater.dateFormat = "MM-dd HH:mm"
         let currentTimeString = formater.string(from: Date.now)
@@ -56,7 +56,7 @@ final class DateConverter {
         return currentTime ?? .now
     }
     
-    public static func convertAstroTime(from timeString: String, with dateString: String) -> Date {
+    static func convertAstroTime(from timeString: String, with dateString: String) -> Date {
         
         let dateAndTimeString = "\(dateString) \(timeString)"
        
@@ -68,7 +68,7 @@ final class DateConverter {
     }
     
     /// Convert "YYYY-MM-dd HH:mm" to "HH:mm". This func will only be used in Hourly Section configuration, thats why it could return "Now".
-    public static func getTimeFromDate(_ date: String) -> String {
+    static func getTimeFromDate(_ date: String) -> String {
         formater.dateFormat = "YYYY-MM-dd HH:mm"
         guard let dateFromString = formater.date(from: date) else {
             return "Now"
@@ -81,7 +81,7 @@ final class DateConverter {
     }
     
     /// 
-    public static func getDayFromDate(_ date: String) -> String {
+    static func getDayFromDate(_ date: String) -> String {
         formater.dateFormat = "YYYY-MM-dd"
         let dateFromString = formater.date(from: date)
         formater.dateFormat = "EEE, d MMM"
