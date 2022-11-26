@@ -14,56 +14,47 @@ typealias LocationsFetchResult = Result<[SearchResponse], Error>
 final class WeatherService {
     
     private let key = "fabdc37da9544f0cad993304222405"
+    private let baseUrl = "http://api.weatherapi.com/v1"
     
-    /// Requests weather data for the given coordinates
+    /// Requests weather data for the given location coordinates
     public func requestWeatherData(for coordinates: Coordinates, completion: @escaping (WeatherDataFetchResult) -> Void) {
         
         let lat = coordinates.lat
         let lon = coordinates.lon
         
-        // Create url
-        guard let url = URL(string: "http://api.weatherapi.com/v1/forecast.json?key=\(key)&q=\(lat),\(lon)&days=3&lang=en") else {
+        guard let url = URL(string: "\(baseUrl)/forecast.json?key=\(key)&q=\(lat),\(lon)&days=3&lang=en") else {
             completion(.failure(WeatherServiceErrors.urlError))
             return
         }
         
-        // create data task
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard error == nil, let data = data else {
                 completion(.failure(WeatherServiceErrors.fetchWeatherError))
                 return
             }
             
-            do {
-                let fetchedWeatherData = try JSONDecoder().decode(WeatherResponse.self, from: data)
-                let weatherResponse = fetchedWeatherData
-                    completion(.success(weatherResponse))
-            } catch {
-                completion(.failure(WeatherServiceErrors.decodingError))
+            if let weatherResponse = self?.parseJSON(from: data, to: WeatherResponse.self) {
+                completion(.success(weatherResponse))
             }
         }.resume()
     }
     
     /// Requests weather data for the given location name
     public func requestWeatherData(for location: String, completion: @escaping (WeatherDataFetchResult) -> Void) {
-
-        guard let url = URL(string: "http://api.weatherapi.com/v1/forecast.json?key=\(key)&q=\(location)&days=3&lang=en") else {
+        
+        guard let url = URL(string: "\(baseUrl)/forecast.json?key=\(key)&q=\(location)&days=3&lang=en") else {
             completion(.failure(WeatherServiceErrors.urlError))
             return
         }
         
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard error == nil, let data = data else {
                 completion(.failure(WeatherServiceErrors.fetchWeatherError))
                 return
             }
             
-            do {
-                let fetchedWeatherData = try JSONDecoder().decode(WeatherResponse.self, from: data)
-                let weatherResponse = fetchedWeatherData
-                    completion(.success(weatherResponse))
-            } catch {
-                completion(.failure(WeatherServiceErrors.decodingError))
+            if let weatherResponse = self?.parseJSON(from: data, to: WeatherResponse.self) {
+                completion(.success(weatherResponse))
             }
         }.resume()
     }
@@ -71,26 +62,34 @@ final class WeatherService {
     /// Requests locations for the given query string
     public func searchLocation(_ searchEntry: String, completion: @escaping (LocationsFetchResult) -> Void) {
         
-        guard let url = URL(string: "http://api.weatherapi.com/v1/search.json?key=\(key)&q=\(searchEntry)") else {
+        guard let url = URL(string: "\(baseUrl)/search.json?key=\(key)&q=\(searchEntry)") else {
             completion(.failure(WeatherServiceErrors.urlError))
             return
         }
-
-        URLSession.shared.dataTask(with: url) { data, response, error  in
+        
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error  in
             
             guard error == nil, let data = data else {
                 completion(.failure(WeatherServiceErrors.fetchLocationError))
                 return
             }
             
-            do {
-                let searchResponse = try JSONDecoder().decode([SearchResponse].self, from: data)
-                let searchResults = searchResponse
+            if let searchResults = self?.parseJSON(from: data, to: [SearchResponse].self) {
                 completion(.success(searchResults))
-            } catch {
-                completion(.failure(WeatherServiceErrors.decodingError))
             }
         }.resume()
+    }
+    
+    /// Parses given JSON data into chosen type
+    private func parseJSON<T: Decodable>(from data: Data, to type: T.Type) -> T? {
+        let decoder = JSONDecoder()
+        do {
+            let parsedData = try decoder.decode(type, from: data)
+            return parsedData
+        } catch let error as NSError {
+            print(error.localizedDescription)
+        }
+        return nil
     }
     
 }
@@ -99,7 +98,6 @@ fileprivate enum WeatherServiceErrors: Error {
     case urlError
     case fetchWeatherError
     case fetchLocationError
-    case decodingError
 }
 
 extension WeatherServiceErrors: LocalizedError {
@@ -111,9 +109,6 @@ extension WeatherServiceErrors: LocalizedError {
             return NSLocalizedString("Failed to fetch weather Data. Check your internet connection", comment: "")
         case .fetchLocationError:
             return NSLocalizedString("Failed to fetch locations. Check your internet connection", comment: "")
-        case .decodingError:
-            return NSLocalizedString("Failed to decode recieved data", comment: "")
         }
     }
-   
 }
