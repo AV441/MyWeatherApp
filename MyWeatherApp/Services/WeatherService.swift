@@ -41,7 +41,7 @@ final class WeatherService {
     
     /// Requests weather data for the given location name
     public func requestWeatherData(for location: String, completion: @escaping (WeatherDataFetchResult) -> Void) {
-        
+
         guard let url = URL(string: "\(baseUrl)/forecast.json?key=\(key)&q=\(location)&days=3&lang=en") else {
             completion(.failure(WeatherServiceErrors.urlError))
             return
@@ -68,7 +68,6 @@ final class WeatherService {
         }
         
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error  in
-            
             guard error == nil, let data = data else {
                 completion(.failure(WeatherServiceErrors.fetchLocationError))
                 return
