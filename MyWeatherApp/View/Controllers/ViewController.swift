@@ -20,7 +20,7 @@ final class ViewController: UIViewController {
     
     private let refreshControl = CollectionRefreshControl()
     private let searchBar = UISearchBar()
-    private let viewModel = CollectionViewModel()
+    private let viewModel = CollectionViewViewModel()
     private let sections = Section.allCases
 
     override func viewDidLoad() {

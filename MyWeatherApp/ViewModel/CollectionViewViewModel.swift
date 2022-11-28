@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class CollectionViewModel: NSObject {
+final class CollectionViewViewModel: NSObject {
     private let locationService = LocationService()
     private let weatherService = WeatherService()
     
