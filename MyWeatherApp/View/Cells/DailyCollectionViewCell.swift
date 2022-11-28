@@ -19,24 +19,24 @@ final class DailyCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var lineView: UIView!
     
-    private var isChanceOfRainLabelHidden: ((Bool) -> Void)?
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        isChanceOfRainLabelHidden = { result in
-            self.chanceOfRainLabel.isHidden = result
-        }
-    }
-
-    public func configure(with viewModel: DailyCellViewModel?) {
-        if let viewModel = viewModel {
+    var viewModel: DailyCellViewModel! {
+        willSet(viewModel) {
             dayLabel.text = viewModel.day
-            chanceOfRainLabel.text = viewModel.chanceOfRain
             minTempLabel.text = viewModel.minTemp
             maxTempLabel.text = viewModel.maxTemp
             imageView.image = viewModel.image
             
-            viewModel.chanceOfRain == "0 %" ? isChanceOfRainLabelHidden?(true) : isChanceOfRainLabelHidden?(false)
+            if viewModel.chanceOfRain != nil {
+                chanceOfRainLabel.isHidden = false
+                chanceOfRainLabel.text = viewModel.chanceOfRain
+            } else {
+                chanceOfRainLabel.isHidden = true
+            }
         }
     }
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
 }

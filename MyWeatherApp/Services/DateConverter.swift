@@ -11,82 +11,60 @@ final class DateConverter {
     
     private static let formater = DateFormatter()
     
-    /// Creates "HH:mm" string from the given date
-    static func createTimeString(from date: Date) -> String {
-        formater.dateFormat = "HH:mm"
-        return formater.string(from: date)
-    }
-    
-    /// ForecastTimeConverter
-    static func convertForecastTimeWithDate(from date: String) -> Date {
-        formater.dateFormat = "YYYY-MM-dd HH:mm"
-        let dateFromString = formater.date(from: date) ?? .now
-        formater.dateFormat = "MM-dd HH:mm"
-        let stringFromDate = formater.string(from: dateFromString)
-        let time = formater.date(from: stringFromDate) ?? .now
-        
-        return time
-    }
-    
-    static func convertForecastTimeWithoutDate(from date: String) -> Date {
-        formater.dateFormat = "YYYY-MM-dd HH:mm"
-        let dateFromString = formater.date(from: date) ?? .now
-        formater.dateFormat = "HH:mm"
-        let stringFromDate = formater.string(from: dateFromString)
-        let time = formater.date(from: stringFromDate) ?? .now
-        
-        return time
-    }
-    
-    static func convertForecastTimeWithoutDate(from date: Date) -> Date {
-        formater.dateFormat = "HH:mm"
-        let stringFromDate = formater.string(from: date)
-        
-        let time = formater.date(from: stringFromDate) ?? .now
-        
-        return time
-    }
-    
+    /// Converts current time to "MM-dd HH:mm" format
     static func convertCurrentTime() -> Date {
-        let formater = DateFormatter()
         formater.dateFormat = "MM-dd HH:mm"
-        let currentTimeString = formater.string(from: Date.now)
+        let currentTimeString = formater.string(from: .now)
         let currentTime = formater.date(from: currentTimeString)
         
         return currentTime ?? .now
     }
     
-    static func convertAstroTime(from timeString: String, with dateString: String) -> Date {
+    /// Converts given date string to date with "MM-dd HH:mm" format
+    static func convertForecastTime(from date: String) -> Date {
+        formater.dateFormat = "YYYY-MM-dd HH:mm"
+        let dateFromString = formater.date(from: date) ?? .now
         
+        formater.dateFormat = "MM-dd HH:mm"
+        let stringFromDate = formater.string(from: dateFromString)
+        let time = formater.date(from: stringFromDate) ?? .now
+        
+        return time
+    }
+    
+    /// Converts given time string to date with "MM-dd HH:mm" format
+    static func convertAstroTime(from timeString: String, with dateString: String) -> Date {
         let dateAndTimeString = "\(dateString) \(timeString)"
-       
+        
         formater.dateFormat = "YYYY-MM-dd hh:mm a"
         let date = formater.date(from: dateAndTimeString) ?? .now
+        
         formater.dateFormat = "MM-dd HH:mm"
         let string = formater.string(from: date)
+        
         return formater.date(from: string) ?? .now
     }
     
-    /// Convert "YYYY-MM-dd HH:mm" to "HH:mm". This func will only be used in Hourly Section configuration, thats why it could return "Now".
-    static func getTimeFromDate(_ date: String) -> String {
-        formater.dateFormat = "YYYY-MM-dd HH:mm"
-        guard let dateFromString = formater.date(from: date) else {
-            return "Now"
-        }
-        
+    /// Creates "HH:mm" string from the given date or returns "Now"
+    static func createTimeString(from date: Date) -> String {
         formater.dateFormat = "HH:mm"
-        let stringFromDate = formater.string(from: dateFromString)
+        let currentTime = formater.string(from: .now)
+        let time = formater.string(from: date)
         
-        return stringFromDate
+        return time == currentTime ? "Now" : time
     }
     
-    static func getDayFromDate(_ date: String) -> String {
+    /// Creates "EEE, d MMM" string from the given date string or returns "Today"
+    static func createDateString(from date: String) -> String {
         formater.dateFormat = "YYYY-MM-dd"
         let dateFromString = formater.date(from: date)
+        let currentDateString = formater.string(from: .now)
+        let currentDate = formater.date(from: currentDateString)
+        
         formater.dateFormat = "EEE, d MMM"
         formater.locale = Locale(identifier: "en")
         let stringFromDate = formater.string(from: dateFromString ?? .now)
         
-        return stringFromDate
+        return dateFromString == currentDate ? "Today" : stringFromDate
     }
 }

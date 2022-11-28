@@ -9,6 +9,8 @@ import UIKit
 
 final class ImageGenerator {
     
+    static let backgroundDayImage = UIImage(named: "backgroundDay")
+    static let backgroundNightImage = UIImage(named: "backgroundNight")
     static let sunriseImage = UIImage(systemName: "sunrise.fill")?.withRenderingMode(.alwaysOriginal)
     static let sunsetImage = UIImage(systemName: "sunset.fill")?.withRenderingMode(.alwaysOriginal)
     

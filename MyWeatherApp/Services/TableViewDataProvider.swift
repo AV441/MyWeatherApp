@@ -8,12 +8,10 @@
 import UIKit
 
 final class TableViewDataProvider: NSObject {
-    
-    private var viewModel: CollectionViewModel
-    
+    private var viewModel: CollectionViewViewModel
     public var requestWeatherForLocation: ((String) -> Void)?
     
-    init(with viewModel: CollectionViewModel) {
+    init(with viewModel: CollectionViewViewModel) {
         self.viewModel = viewModel
     }
 }

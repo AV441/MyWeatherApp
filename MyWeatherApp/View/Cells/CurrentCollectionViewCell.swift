@@ -18,15 +18,17 @@ final class CurrentCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var conditionLabel: UILabel!
     @IBOutlet weak var imageView: UIImageView!
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    var viewModel: CurrentCellViewModel! {
+        willSet(viewModel) {
+            locationLabel.text = viewModel.locationName
+            tempLabel.text = viewModel.temp
+            feelsLikeLabel.text = viewModel.feelsLikeTemp
+            conditionLabel.text = viewModel.condition
+            imageView.image = viewModel.image
+        }
     }
     
-    public func configure(with viewModel: CurrentCellViewModel) {
-        locationLabel.text = viewModel.locationName
-        tempLabel.text = viewModel.temp
-        feelsLikeLabel.text = viewModel.feelsLikeTemp
-        conditionLabel.text = viewModel.condition
-        imageView.image = viewModel.image
+    override func awakeFromNib() {
+        super.awakeFromNib()
     }
 }

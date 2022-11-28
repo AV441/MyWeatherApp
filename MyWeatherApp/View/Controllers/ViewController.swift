@@ -13,10 +13,12 @@ final class ViewController: UIViewController {
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var tableView: UITableView!
-    @IBOutlet  var collectionView: UICollectionView!
+    @IBOutlet weak var collectionView: UICollectionView!
     
     private var collectionViewDataProvider: CollectionViewDataProvider!
     private var tableViewDataProvider: TableViewDataProvider!
+    
+    private var noWeatherData = true
     
     private let refreshControl = CollectionRefreshControl()
     private let searchBar = UISearchBar()
@@ -34,18 +36,16 @@ final class ViewController: UIViewController {
     
     private func bindViewModel() {
         
-        viewModel.updateBackground = { result in
+        viewModel.updateBackground = { isDay in
             DispatchQueue.main.async { [weak self] in
-                if result == 1 {
-                    self?.imageView.image = UIImage(named: "backgroundDay")
-                } else {
-                    self?.imageView.image = UIImage(named: "backgroundNight")
-                }
+                let image = isDay ? ImageGenerator.backgroundDayImage : ImageGenerator.backgroundNightImage
+                self?.imageView.image = image
             }
         }
         
         viewModel.updateCollectionView = {
             DispatchQueue.main.async { [weak self] in
+                self?.noWeatherData = false
                 self?.collectionView.reloadData()
                 self?.collectionView.performBatchUpdates(nil) { [weak self] _ in
                     self?.updateUI(state: .showCollectionView)
@@ -158,7 +158,7 @@ extension ViewController: UISearchBarDelegate {
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.hide()
         
-        if viewModel.currentCellViewModels.isEmpty {
+        if noWeatherData {
             updateUI(state: .showNoResultsLabel)
         } else {
             updateUI(state: .showCollectionView)

@@ -13,32 +13,68 @@ final class CollectionViewViewModel: NSObject {
     
     public var updateCollectionView: () -> Void = {}
     public var updateTableView: () -> Void = {}
-    public var updateBackground: ((Int) -> Void)?
+    public var updateBackground: ((Bool) -> Void)?
         
     public var locations = [SearchResponse]()
     
-    public var currentCellViewModels = [CurrentCellViewModel]()
-    public var hourlyCellViewModels = [HourlyCellViewModel]()
-    public var dailyCellViewModels = [DailyCellViewModel]()
+    private var currentItems = [CurrentItem]()
+    private var hourlyItems = [HourlyItem]()
+    private var dailyItems = [DailyItem]()
+    
+    public var weatherData: WeatherResponse? {
+        willSet(weatherData) {
+            createWeatherItems(from: weatherData)
+        }
+    }
     
     override init() {
         super.init()
         getWeatherDataForCurrentLocation()
     }
     
+    /// Returns number of items for the given section index
+    public func numberOfItems(inSection index: Int) -> Int {
+        switch Section.allCases[index] {
+        case .current:
+            return currentItems.count
+        case .hourly:
+            return hourlyItems.count
+        case .daily:
+            return dailyItems.count
+        }
+    }
+    
+    /// Returns cell viewModel for the given indexPath
+    public func cellViewModel(for indexPath: IndexPath) -> AnyObject {
+        let section = Section.allCases[indexPath.section]
+        
+        switch section {
+        case .current:
+            let item = currentItems[indexPath.item]
+            return CurrentCellViewModel(item)
+        case .hourly:
+            let item = hourlyItems[indexPath.item]
+            return HourlyCellViewModel(item)
+        case .daily:
+            let item = dailyItems[indexPath.item]
+            return DailyCellViewModel(item)
+        }
+    }
+    
     /// Requests weather data for the current location and updates collection view
     public func getWeatherDataForCurrentLocation() {
         locationService.updateLocation { [weak self] result in
             switch result {
-                
             case .success(let coordinates):
                 self?.weatherService.requestWeatherData(for: coordinates) { [weak self] result in
                     switch result {
-                        
                     case .success(let weatherData):
-                        self?.createCellViewModels(from: weatherData) { [weak self] _ in
-                            self?.updateCollectionView()
-                        }
+                        self?.weatherData = weatherData
+                        self?.updateCollectionView()
+                        
+                        let isDay = weatherData.current.isDay
+                        self?.updateBackground?(isDay == 1 ? true : false)
+                        
                     case .failure(let error):
                         print(error.localizedDescription)
                     }
@@ -49,11 +85,28 @@ final class CollectionViewViewModel: NSObject {
         }
     }
     
+    /// Requests weather data for the given location name and updates collection view
+    public func getWeatherData(for locationName: String) {
+        weatherService.requestWeatherData(for: locationName) { [weak self] result in
+            switch result {
+            case .success(let weatherData):
+                UserDefaults.standard.set(locationName, forKey: "lastLocation")
+                self?.weatherData = weatherData
+                self?.updateCollectionView()
+                
+                let isDay = weatherData.current.isDay
+                self?.updateBackground?(isDay == 1 ? true : false)
+                
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
     /// Requests locations for the given query string and updates table view
     public func searchLocation(query: String) {
         weatherService.searchLocation(query) { [weak self] result in
             switch result {
-                
             case .success(let locations):
                 self?.locations = locations
                 self?.updateTableView()
@@ -64,89 +117,43 @@ final class CollectionViewViewModel: NSObject {
         }
     }
     
-    /// Requests weather data for the given location name and updates collection view
-    public func getWeatherData(for locationName: String) {
-        
-        weatherService.requestWeatherData(for: locationName) { [weak self] result in
-            switch result {
-                
-            case .success(let weatherData):
-                UserDefaults.standard.set(locationName, forKey: "lastLocation")
-                
-                self?.createCellViewModels(from: weatherData) { [weak self] _ in
-                    let isDay = weatherData.current.isDay
-                    self?.updateBackground?(isDay)
-                    self?.updateCollectionView()
-                }
-                
-            case .failure(let error):
-                print(error.localizedDescription)
-            }
-        }
-    }
-    
-    /// Creates cell view models for collection view
-    private func createCellViewModels(from weatherData: WeatherResponse, completion: (Bool) -> Void) {
-        
-        createCurrentCellViewModels(from: weatherData) { [weak self] currentCellViewModels in
-                self?.currentCellViewModels = currentCellViewModels
+    /// Creates items for collection view cells viewModels
+    func createWeatherItems(from weatherData: WeatherResponse?) {
+        guard let weatherData = weatherData else {
+            return
         }
         
-        createHourlyItems(from: weatherData) { [weak self] hourlyItems in
-            self?.createHourlyViewModels(from: hourlyItems) { [weak self] hourlyCellViewModels in
-                self?.hourlyCellViewModels = hourlyCellViewModels
-            }
+        // Current items
+        var currentItems = [CurrentItem]()
+        let currentItem = CurrentItem(location: weatherData.location,
+                                      current: weatherData.current)
+        currentItems.append(currentItem)
+        self.currentItems = currentItems
+
+        // Daily items
+        var dailyItems = [DailyItem]()
+        weatherData.forecast.forecastday.forEach {
+            let dailyItem = DailyItem(forecast: $0)
+            dailyItems.append(dailyItem)
         }
-        
-        createDailyCellViewModels(from: weatherData) { [weak self] dailyCellViewModels in
-            self?.dailyCellViewModels = dailyCellViewModels
-        }
-        
-        completion(true)
-    }
-    
-    /// Creates current cell view models
-    private func createCurrentCellViewModels(from weatherResponse: WeatherResponse, completion: ([CurrentCellViewModel]) -> Void) {
-        
-        var currentCellViewModels = [CurrentCellViewModel]()
-        
-        let locationName = weatherResponse.location.name
-        let temp = "\(Int(weatherResponse.current.temp)) °"
-        let condition = weatherResponse.current.condition.text
-        let feelsLikeTemp = "Feels like \(Int(weatherResponse.current.feelsLike)) °"
-        
-        let isDay = weatherResponse.current.isDay
-        let code = weatherResponse.current.condition.code
-        let imageDay = ImageGenerator.dayImage(for: code)
-        let imageNight = ImageGenerator.nightImage(for: code)
-        
-        let currentCellViewModel = CurrentCellViewModel(locationName: locationName,
-                                                        temp: temp,
-                                                        image: isDay == 1 ? imageDay : imageNight,
-                                                        condition: condition,
-                                                        feelsLikeTemp: feelsLikeTemp)
-        currentCellViewModels.append(currentCellViewModel)
-        completion(currentCellViewModels)
-    }
-    
-    /// Creates hourly items
-    private func createHourlyItems(from weatherResponse: WeatherResponse, completion: ([HourlyItem]) -> Void) {
-        
+        self.dailyItems = dailyItems
+   
+        // Hourly items
         var hourlyItems = [HourlyItem]()
         let currentTime = DateConverter.convertCurrentTime()
         
         let firstItem = HourlyItem(time: .now,
                                    astroData: nil,
                                    weatherData: HourlyForecast(time: "Now",
-                                                               temp: weatherResponse.current.temp,
-                                                               isDay: weatherResponse.current.isDay,
+                                                               temp: weatherData.current.temp,
+                                                               isDay: weatherData.current.isDay,
                                                                chanceOfRain: 0,
-                                                               condition: weatherResponse.current.condition))
+                                                               condition: weatherData.current.condition))
         
         for i in 0...1 {
-            let sunriseTimeString = weatherResponse.forecast.forecastday[i].astro.sunrise
-            let sunsetTimeString = weatherResponse.forecast.forecastday[i].astro.sunset
-            let forecastDateString = weatherResponse.forecast.forecastday[i].date
+            let sunriseTimeString = weatherData.forecast.forecastday[i].astro.sunrise
+            let sunsetTimeString = weatherData.forecast.forecastday[i].astro.sunset
+            let forecastDateString = weatherData.forecast.forecastday[i].date
             
             
             let sunriseTime = DateConverter.convertAstroTime(from: sunriseTimeString, with: forecastDateString)
@@ -163,10 +170,10 @@ final class CollectionViewViewModel: NSObject {
                 hourlyItems.append(sunriseItem)
                 hourlyItems.append(sunsetItem)
             
-            let hourlyWeather = weatherResponse.forecast.forecastday[i].hour
+            let hourlyWeather = weatherData.forecast.forecastday[i].hour
             
             hourlyWeather.forEach {
-                let time = DateConverter.convertForecastTimeWithDate(from: $0.time)
+                let time = DateConverter.convertForecastTime(from: $0.time)
                 let weatherItem = HourlyItem(time: time,
                                              astroData: nil,
                                              weatherData: $0)
@@ -181,66 +188,7 @@ final class CollectionViewViewModel: NSObject {
         hourlyItems = hourlyItems.sorted(by: { $0.time < $1.time })
         hourlyItems.insert(firstItem, at: 0)
         hourlyItems.removeSubrange(27...hourlyItems.count - 1)
-        
-        completion(hourlyItems)
-    }
-    
-    /// creates hourly cell view models using hourly items
-    private func createHourlyViewModels(from hourlyItems: [HourlyItem], completion: ([HourlyCellViewModel]) -> Void) {
-        
-        var hourlyViewModels = [HourlyCellViewModel]()
-        
-        for item in hourlyItems {
-            if let astroData = item.astroData {
-                switch astroData {
-                    
-                case .isSunrise:
-                    hourlyViewModels.append(
-                        HourlyCellViewModel(time: DateConverter.createTimeString(from: item.time),
-                                            image: ImageGenerator.sunriseImage,
-                                            chanceOfRain: "0 %",
-                                            temp: "Sunrise")
-                    )
-                case .isSunset:
-                    hourlyViewModels.append(
-                        HourlyCellViewModel(time: DateConverter.createTimeString(from: item.time),
-                                            image: ImageGenerator.sunsetImage,
-                                            chanceOfRain: "0 %",
-                                            temp: "Sunset")
-                    )
-                }
-            }
-            
-            if let weatherData = item.weatherData {
-                let time = DateConverter.createTimeString(from: item.time)
-                let code = weatherData.condition.code
-                let image = ImageGenerator.dayImage(for: code)
-                hourlyViewModels.append(HourlyCellViewModel(time: weatherData.time == "Now" ? "Now" : time,
-                                                            image: image,
-                                                            chanceOfRain: "\(weatherData.chanceOfRain) %",
-                                                            temp: "\(Int(weatherData.temp))°")
-                )
-            }
-        }
-        completion(hourlyViewModels)
-    }
-    
-    /// Creates daily cell view models
-    private func createDailyCellViewModels(from weatherData: WeatherResponse, completion: ([DailyCellViewModel]) -> Void) {
-        var dailyCellViewModels = [DailyCellViewModel]()
-        
-        let forecast = weatherData.forecast.forecastday
-        
-        for day in forecast {
-            let code = day.day.condition.code
-            let image = ImageGenerator.dayImage(for: code)
-            let cellViewModel = DailyCellViewModel(day: DateConverter.getDayFromDate(day.date),
-                                                   image: image,
-                                                   chanceOfRain: "\(day.day.dailyChanceOfRain) %",
-                                                   minTemp: "\(Int(day.day.minTemp))°",
-                                                   maxTemp: "\(Int(day.day.maxTemp))°")
-            dailyCellViewModels.append(cellViewModel)
-        }
-        completion(dailyCellViewModels)
+
+        self.hourlyItems = hourlyItems
     }
 }

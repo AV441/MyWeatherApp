@@ -9,9 +9,9 @@ import UIKit
 
 final class CollectionViewDataProvider: NSObject {
     private let sections = Section.allCases
-    private var viewModel: CollectionViewModel
+    private var viewModel: CollectionViewViewModel
     
-    init(with viewModel: CollectionViewModel) {
+    init(with viewModel: CollectionViewViewModel) {
         self.viewModel = viewModel
     }
 }
@@ -23,16 +23,7 @@ extension CollectionViewDataProvider: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-
-        switch sections[section] {
-
-        case .current:
-            return viewModel.currentCellViewModels.count
-        case .hourly:
-            return viewModel.hourlyCellViewModels.count
-        case .daily:
-            return viewModel.dailyCellViewModels.count
-        }
+        return viewModel.numberOfItems(inSection: section)
     }
     
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
@@ -59,21 +50,25 @@ extension CollectionViewDataProvider: UICollectionViewDataSource {
         switch sections[indexPath.section] {
 
         case .current:
-            let cellViewModel = viewModel.currentCellViewModels[indexPath.row]
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CurrentCollectionViewCell.identifier, for: indexPath) as! CurrentCollectionViewCell
-            cell.configure(with: cellViewModel)
+            
+            if let cellViewModel = viewModel.cellViewModel(for: indexPath) as? CurrentCellViewModel {
+                cell.viewModel = cellViewModel
+            }
             return cell
 
         case .hourly:
-            let cellViewModel = viewModel.hourlyCellViewModels[indexPath.row]
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: HourlyCollectionViewCell.identifier, for: indexPath) as! HourlyCollectionViewCell
-            cell.configure(with: cellViewModel)
+            if let cellViewModel = viewModel.cellViewModel(for: indexPath) as? HourlyCellViewModel {
+                cell.viewModel = cellViewModel
+            }
             return cell
 
         case .daily:
-            let cellViewModel = viewModel.dailyCellViewModels[indexPath.row]
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DailyCollectionViewCell.identifier, for: indexPath) as! DailyCollectionViewCell
-            cell.configure(with: cellViewModel)
+            if let cellViewModel = viewModel.cellViewModel(for: indexPath) as? DailyCellViewModel {
+                cell.viewModel = cellViewModel
+            }
             return cell
         }
     }

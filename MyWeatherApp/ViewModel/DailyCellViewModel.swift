@@ -7,10 +7,33 @@
 
 import UIKit
 
-struct DailyCellViewModel {
-    let day: String
-    let image: UIImage?
-    let chanceOfRain: String
-    let minTemp: String
-    let maxTemp: String
+final class DailyCellViewModel {
+    
+    private var item: DailyItem!
+    
+    init(_ item: DailyItem) {
+        self.item = item
+    }
+    
+    var day: String {
+        return DateConverter.createDateString(from: item.forecast.date)
+    }
+    
+    var image: UIImage? {
+        let code = item.forecast.day.condition.code
+        return ImageGenerator.dayImage(for: code)
+    }
+    
+    var chanceOfRain: String? {
+        let chanceOfRain = item.forecast.day.dailyChanceOfRain
+        return chanceOfRain == 0 ? nil : "\(chanceOfRain) %"
+    }
+    
+    var minTemp: String {
+        return "\(Int(item.forecast.day.minTemp))°"
+    }
+    
+    var maxTemp: String {
+        return "\(Int(item.forecast.day.maxTemp))°"
+    }
 }

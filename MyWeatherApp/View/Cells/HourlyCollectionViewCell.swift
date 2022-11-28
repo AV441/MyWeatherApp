@@ -17,23 +17,23 @@ final class HourlyCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var tempLabel: UILabel!
     @IBOutlet weak var imageView: UIImageView!
     
-    private var isChanceOfRainLabelHidden: ((Bool) -> Void)?
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        isChanceOfRainLabelHidden = { [weak self] result in
-            self?.chanceOfRainLabel.isHidden = result
-        }
-    }
-    
-    public func configure(with viewModel: HourlyCellViewModel?) {
-        if let viewModel = viewModel {
+    var viewModel: HourlyCellViewModel! {
+        willSet(viewModel) {
             timeLabel.text = viewModel.time
-            chanceOfRainLabel.text = viewModel.chanceOfRain
             tempLabel.text = viewModel.temp
             imageView.image = viewModel.image
             
-            viewModel.chanceOfRain == "0 %" ? isChanceOfRainLabelHidden?(true) : isChanceOfRainLabelHidden?(false)
+            if viewModel.chanceOfRain != nil {
+                chanceOfRainLabel.isHidden = false
+                chanceOfRainLabel.text = viewModel.chanceOfRain
+            } else {
+                chanceOfRainLabel.isHidden = true
+            }
         }
     }
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
 }
